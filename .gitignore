@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+.env
+*.egg-info/
+dist/
+build/
+*.log
+
+# VSCode
+.vscode/
+
+# ROS2
+install/
+log/
+build/
+
+# Modelos e dados grandes
+models/
+*.pt
+
+# Imagens
+*.jpg
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Runs
+runs/
+
+# Data
+data/dataset
