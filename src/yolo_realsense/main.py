@@ -6,7 +6,7 @@ from inference import process_image
 from utils import save_results, save_json
 
 # --- Configurações ---
-MODEL_PATH = os.path.join("models", "best.pt")
+MODEL_PATH = os.path.join("models", "yolov8n.pt")
 IMG_FOLDER = os.path.join("data", "test")
 OUTPUT_FOLDER = os.path.join("results", "images")
 

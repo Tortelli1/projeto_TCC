@@ -3,7 +3,7 @@
   <name>yolo_realsense</name>
   <version>0.1.0</version>
   <description>YOLOv8 + Intel RealSense integration for ROS2</description>
-  <maintainer email="you@example.com">Seu Nome</maintainer>
+  <maintainer email="marcopazinitortelli@gmail.com">Marco Tortelli</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_python</buildtool_depend>
