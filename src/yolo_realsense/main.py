@@ -1,38 +1,27 @@
-import os
 import cv2
-from tqdm import tqdm
-from ultralytics import YOLO
-from inference import process_image
-from utils import save_results, save_json
+from yolo_realsense.utils import initialize_realsense, get_frame
+from yolo_realsense.inference import YOLODetector
 
-# --- Configurações ---
-MODEL_PATH = os.path.join("models", "yolov8n.pt")
-IMG_FOLDER = os.path.join("data", "test")
-OUTPUT_FOLDER = os.path.join("results", "images")
+def main():
+    pipeline = initialize_realsense()
+    detector = YOLODetector("models/yolov8n.pt")
 
-TARGET_CLASSES = ['traffic cone', 'Boxes']
+    try:
+        while True:
+            color_image, depth_image = get_frame(pipeline)
+            if color_image is None:
+                continue
 
-# --- Carregar modelo ---
-model = YOLO(MODEL_PATH)
+            results = detector.detect(color_image)
+            annotated_frame = detector.draw_results(color_image, results)
 
-# --- Processar imagens ---
-image_files = [f for f in os.listdir(IMG_FOLDER) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-detections_data = {}
+            cv2.imshow("YOLOv8 + RealSense", annotated_frame)
 
-for img_file in tqdm(image_files, desc="Processando imagens"):
-    img_path = os.path.join(IMG_FOLDER, img_file)
-    image = cv2.imread(img_path)
+            if cv2.waitKey(1) & 0xFF == 27:  # ESC para sair
+                break
+    finally:
+        pipeline.stop()
+        cv2.destroyAllWindows()
 
-    if image is None:
-        print(f"Erro ao carregar {img_path}")
-        continue
-
-    detections, annotated = process_image(model, image, TARGET_CLASSES)
-
-    save_results(annotated, detections, OUTPUT_FOLDER, img_file)
-    detections_data[img_file] = detections
-
-# --- Salvar todas as detecções em JSON ---
-save_json(detections_data, "results")
-
-print("✅ Processamento concluído!")
+if __name__ == "__main__":
+    main()

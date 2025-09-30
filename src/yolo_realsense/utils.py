@@ -1,19 +1,23 @@
-import os
-import json
+import pyrealsense2 as rs
+import numpy as np
 import cv2
 
-def save_results(image, detections, output_folder, img_file):
-    """
-    Salva imagem anotada e atualiza dicionário de detecções.
-    """
-    os.makedirs(output_folder, exist_ok=True)
-    output_path = os.path.join(output_folder, f"resultado_{img_file}")
-    cv2.imwrite(output_path, image)
-    return detections
+def initialize_realsense():
+    pipeline = rs.pipeline()
+    config = rs.config()
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    pipeline.start(config)
+    return pipeline
 
-def save_json(data, output_folder, filename="detections.json"):
-    """
-    Salva dicionário de detecções em JSON.
-    """
-    with open(os.path.join(output_folder, filename), "w") as f:
-        json.dump(data, f, indent=4)
+def get_frame(pipeline):
+    frames = pipeline.wait_for_frames()
+    color_frame = frames.get_color_frame()
+    depth_frame = frames.get_depth_frame()
+
+    if not color_frame or not depth_frame:
+        return None, None
+
+    color_image = np.asanyarray(color_frame.get_data())
+    depth_image = np.asanyarray(depth_frame.get_data())
+    return color_image, depth_image
