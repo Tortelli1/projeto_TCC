@@ -1,4 +1,3 @@
-# launch/yolo_realsense_launch.py
 import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
@@ -13,7 +12,6 @@ def generate_launch_description():
         executable='realsense2_camera_node',
         name='realsense2_camera',
         output='screen',
-        # se quiser, adicione parâmetros aqui
     )
 
     yolo_node = Node(
@@ -22,17 +20,16 @@ def generate_launch_description():
         name='yolo_realsense_node',
         output='screen',
         parameters=[
-            {'use_driver_node': True},                 # True = usa driver realsense2_camera (subscribe)
+            {'use_driver_node': True},
             {'model_path': default_model},
             {'device': 'cpu'},
             {'conf_threshold': 0.25},
-            {'publish_annotated': True},               # publica imagens anotadas em /yolo/annotated_image
-            {'camera_topic': '/camera/color/image_raw'},# topic a escutar quando use_driver_node=True
+            {'publish_annotated': True},
+            {'camera_topic': '/camera/color/image_raw'},
         ]
     )
 
     ld = LaunchDescription()
-    # adicione realsense_node se desejar que o launch também inicie o driver
     ld.add_action(realsense_node)
     ld.add_action(yolo_node)
 

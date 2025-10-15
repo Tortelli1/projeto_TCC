@@ -1,4 +1,3 @@
-# src/yolo_realsense/inference.py
 from ultralytics import YOLO
 
 class YOLODetector:
@@ -8,10 +7,8 @@ class YOLODetector:
         self.conf = conf
 
     def detect(self, frame):
-        # ultralytics aceita np.ndarray como input
         results = self.model(frame, device=self.device, conf=self.conf)
         return results
 
     def draw_results(self, results):
-        # results[0].plot() retorna np.ndarray anotado
         return results[0].plot()

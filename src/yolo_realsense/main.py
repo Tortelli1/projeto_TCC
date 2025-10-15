@@ -1,4 +1,3 @@
-# src/yolo_realsense/main.py
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -7,12 +6,12 @@ from cv_bridge import CvBridge, CvBridgeError
 from yolo_realsense.inference import YOLODetector
 from yolo_realsense.utils import RealSenseDirect, cv2_to_msg
 import numpy as np
+import cv2
 
 class YOLORealsenseNode(Node):
     def __init__(self):
         super().__init__('yolo_realsense_node')
 
-        # parâmetros (com defaults)
         self.declare_parameter('use_driver_node', True)
         self.declare_parameter('model_path', 'models/yolov8n.pt')
         self.declare_parameter('device', 'cpu')
@@ -29,29 +28,33 @@ class YOLORealsenseNode(Node):
 
         self.get_logger().info(f'use_driver_node={self.use_driver_node}, model={model_path}, device={device}, conf={conf}')
 
-        # detector
         self.detector = YOLODetector(model_path=model_path, device=device, conf=conf)
         self.bridge = CvBridge()
 
-        # publisher para imagem anotada
         if self.publish_annotated:
             self.pub_image = self.create_publisher(Image, 'yolo/annotated_image', 10)
 
-        # se for usar driver realsense2_camera, subcreve no tópico de imagem
         if self.use_driver_node:
             from sensor_msgs.msg import Image as SensorImage
             self.create_subscription(SensorImage, camera_topic, self.image_callback, 10)
             self.get_logger().info(f'Subscribed to camera topic: {camera_topic}')
         else:
-            # usa RealSense direto via pyrealsense2
             try:
+                from yolo_realsense.utils import RealSenseDirect
                 self.realsense = RealSenseDirect()
+                self.use_realsense = True
+                self.get_logger().info("Usando Intel RealSense diretamente (sem driver ROS).")
+                self.create_timer(1.0 / 30.0, self.timer_callback)
             except Exception as e:
-                self.get_logger().error(f'Falha ao inicializar RealSense: {e}')
-                raise
+                self.get_logger().warn(f"RealSense não detectada ({e}). Usando webcam do notebook.")
+                self.use_realsense = False
+                self.cap = cv2.VideoCapture(0)
 
-            # timer para capturar frames
-            self.create_timer(1.0 / 30.0, self.timer_callback)
+                if not self.cap.isOpened():
+                    self.get_logger().error("Falha ao acessar webcam do notebook.")
+                    raise RuntimeError("Nenhuma câmera disponível.")
+
+                self.create_timer(1.0 / 30.0, self.timer_callback_webcam)
 
     def image_callback(self, msg):
         try:
@@ -60,11 +63,9 @@ class YOLORealsenseNode(Node):
             self.get_logger().error(f'CvBridge error: {e}')
             return
 
-        # detect
         results = self.detector.detect(cv_image)
         annotated = self.detector.draw_results(results)
 
-        # publicar imagem anotada
         if self.publish_annotated:
             try:
                 out_msg = cv2_to_msg(annotated, self.bridge)
@@ -73,23 +74,26 @@ class YOLORealsenseNode(Node):
             except CvBridgeError as e:
                 self.get_logger().error(f'Erro ao converter imagem anotada: {e}')
 
-    def timer_callback(self):
-        color_image, depth_image = self.realsense.get_frame()
-        if color_image is None:
+    def timer_callback_webcam(self):
+        ret, frame = self.cap.read()
+        if not ret:
+            self.get_logger().warn("Falha ao capturar frame da webcam.")
             return
 
-        results = self.detector.detect(color_image)
+        results = self.detector.detect(frame)
         annotated = self.detector.draw_results(results)
 
         if self.publish_annotated:
             try:
                 out_msg = cv2_to_msg(annotated, self.bridge)
                 self.pub_image.publish(out_msg)
-            except CvBridgeError as e:
-                self.get_logger().error(f'Erro ao publicar imagem anotada: {e}')
+            except Exception as e:
+                self.get_logger().error(f"Erro ao publicar imagem anotada: {e}")
+
 
     def destroy_node(self):
-        # cleanup
+        if hasattr(self, 'cap'):
+            self.cap.release()
         if hasattr(self, 'realsense'):
             try:
                 self.realsense.stop()

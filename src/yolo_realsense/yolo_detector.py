@@ -1,8 +1,3 @@
-"""
-Nó ROS2 para detecção em tempo real usando YOLOv8 e Intel RealSense.
-Assina imagens coloridas e de profundidade, roda detecção, calcula distância e publica resultados.
-"""
-
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -19,7 +14,6 @@ class YoloRealtimeDetector(Node):
     def __init__(self):
         super().__init__('yolo_realsense_detector')
 
-        # Parâmetros configuráveis via arquivo YAML ou CLI
         self.declare_parameter('model_path', os.path.join('models', 'yolov8n.pt'))
         self.declare_parameter('target_classes', [])
         self.declare_parameter('device', 'cpu')
@@ -29,7 +23,6 @@ class YoloRealtimeDetector(Node):
         self.declare_parameter('publish_detections_topic', '/yolo/detections')
         self.declare_parameter('conf_threshold', 0.25)
 
-        # Carrega parâmetros
         model_path = self.get_parameter('model_path').get_parameter_value().string_value
         self.target_classes = self.get_parameter('target_classes').get_parameter_value().string_array_value
         self.device = self.get_parameter('device').get_parameter_value().string_value
@@ -48,22 +41,17 @@ class YoloRealtimeDetector(Node):
 
         self.bridge = CvBridge()
 
-        # Subscribers sincronizados
         color_sub = message_filters.Subscriber(self, Image, color_topic)
         depth_sub = message_filters.Subscriber(self, Image, depth_topic)
         ats = message_filters.ApproximateTimeSynchronizer([color_sub, depth_sub], queue_size=10, slop=0.1)
         ats.registerCallback(self.callback_rgb_depth)
 
-        # Publishers
         self.pub_image = self.create_publisher(Image, self.pub_image_topic, 10)
         self.pub_detections = self.create_publisher(String, self.pub_dets_topic, 10)
 
         self.get_logger().info('YOLO RealSense detector inicializado.')
 
     def _depth_to_meters(self, depth_image):
-        """
-        Converte imagem de profundidade para metros.
-        """
         if depth_image.dtype == np.uint16:
             return depth_image.astype(np.float32) / 1000.0
         elif depth_image.dtype in [np.float32, np.float64]:
@@ -73,9 +61,6 @@ class YoloRealtimeDetector(Node):
             return depth_image.astype(np.float32)
 
     def _filter_classes(self, class_name):
-        """
-        Filtra classes conforme parâmetro target_classes.
-        """
         return not self.target_classes or class_name in self.target_classes
 
     def callback_rgb_depth(self, color_msg, depth_msg):
@@ -133,7 +118,6 @@ class YoloRealtimeDetector(Node):
             cv2.putText(color_cv, label, (x1, max(y1 - 8, 12)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-        # Publica imagem anotada
         try:
             out_img_msg = self.bridge.cv2_to_imgmsg(color_cv, encoding='bgr8')
             out_img_msg.header = color_msg.header
@@ -141,7 +125,6 @@ class YoloRealtimeDetector(Node):
         except Exception as e:
             self.get_logger().error(f'Falha ao publicar imagem anotada: {e}')
 
-        # Publica detections como JSON
         try:
             payload = {
                 'header': {
@@ -160,9 +143,6 @@ class YoloRealtimeDetector(Node):
             self.get_logger().error(f'Falha ao publicar JSON de detecções: {e}')
 
 def main(args=None):
-    """
-    Função principal do nó ROS2.
-    """
     rclpy.init(args=args)
     node = YoloRealtimeDetector()
     try:
