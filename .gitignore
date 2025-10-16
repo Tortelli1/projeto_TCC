@@ -1,0 +1,80 @@
+# ===============================
+# GITIGNORE - Projeto YOLO + RealSense + ROS2
+# ===============================
+
+# ---- Python ----
+_pycache_/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+*.log
+*.tmp
+
+# ---- VSCode / IDE ----
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ---- Sistema / Windows ----
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+*.lnk
+
+# ---- Modelos YOLO (grandes arquivos .pt) ----
+# Adicione apenas o nome do modelo usado, se quiser versionar manualmente
+*.pt
+
+# ---- Arquivos temporários / cache de Ultralytics ----
+runs/
+ultralytics/
+wandb/
+*.yaml~
+*.json~
+*.ipynb_checkpoints/
+
+# ---- ROS2 build e logs ----
+install/
+build/
+log/
+
+# ---- Jupyter / Notebook ----
+*.ipynb_checkpoints/
+*.ipynb
+
+# ---- Dados de câmera / RealSense ----
+*.bag
+*.raw
+*.depth
+*.bin
+*.dat
+
+# ---- Arquivos auxiliares locais ----
+*.bat
+*.ps1
+*.sh
+test_local.py
+
+# ---- Arquivos de ambiente / configurações privadas ----
+.env
+*.config
+config.yaml
+settings.json
+
+# ---- Backup / temporários ----
+*.bak
+*.old
+*.swp
+*.tmp
+~$*
